@@ -40,7 +40,7 @@
         res.end("<h1>hi</h1>");
     });
 
-##### 可以看到browser會把\<h1>hi\</h1>當成html來解析，可是如果就是要讓它直接顯示end所傳送的內容呢? 這時候就要指定content-type了。
+##### 可以看到browser會把end的內容當成html來解析，可是如果就是要讓它直接顯示end所傳送的內容呢? 這時候就要指定content-type了。
 
     // 使用工廠方法生成一個server實例
     var server = http.createServer(function(req,res){
