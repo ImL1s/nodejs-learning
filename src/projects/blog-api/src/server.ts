@@ -52,7 +52,7 @@ async function startServer() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     // Handle uncaught errors
-    process.on('unhandledRejection', (reason: any) => {
+    process.on('unhandledRejection', (reason: unknown) => {
       logger.error('Unhandled Rejection:', reason);
       gracefulShutdown('unhandledRejection');
     });

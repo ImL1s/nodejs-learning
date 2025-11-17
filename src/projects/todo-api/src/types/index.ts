@@ -32,9 +32,5 @@ export interface TodoQuery {
   order?: 'asc' | 'desc';
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+// Re-export shared API response type
+export type { ApiResponse } from '../../../../common/types/api.js';

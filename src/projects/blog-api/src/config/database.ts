@@ -4,6 +4,7 @@
 
 import { Pool, PoolConfig } from 'pg';
 import { DatabaseConfig } from '../types';
+import { QueryParam } from '../../../../common/types/database.js';
 
 export class Database {
   private static instance: Database;
@@ -40,7 +41,7 @@ export class Database {
     return this.pool;
   }
 
-  public async query(text: string, params?: any[]) {
+  public async query(text: string, params?: QueryParam[]) {
     const start = Date.now();
     const res = await this.pool.query(text, params);
     const duration = Date.now() - start;

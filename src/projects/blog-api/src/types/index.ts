@@ -150,13 +150,8 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// API Response Types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+// API Response Types - use shared types
+export type { ApiResponse, PaginatedResponse as SharedPaginatedResponse } from '../../../../common/types/api.js';
 
 // Database Types
 export interface DatabaseConfig {
