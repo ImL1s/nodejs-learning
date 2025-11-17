@@ -1,0 +1,474 @@
+// Prisma Schema 設計範例
+// 這個文件展示了如何設計一個完整的數據庫架構
+
+// ============================================
+// 基礎配置
+// ============================================
+
+datasource db {
+  provider = "postgresql"  // 數據庫類型：postgresql, mysql, sqlite, sqlserver, mongodb
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // 可選配置
+  // output = "../generated/client"  // 自定義生成路徑
+  // previewFeatures = ["fullTextSearch"]  // 啟用預覽功能
+}
+
+// ============================================
+// 用戶管理模型
+// ============================================
+
+// 用戶表 - 存儲用戶基本信息
+model User {
+  // 主鍵：自動遞增的整數 ID
+  id        Int      @id @default(autoincrement())
+
+  // 郵箱：唯一、必填
+  email     String   @unique
+
+  // 用戶名：可選
+  name      String?
+
+  // 密碼哈希：必填
+  password  String
+
+  // 角色：默認為 USER
+  role      Role     @default(USER)
+
+  // 是否激活：默認為 true
+  isActive  Boolean  @default(true)
+
+  // 頭像 URL：可選
+  avatar    String?
+
+  // 個人簡介：可選
+  bio       String?  @db.Text  // 使用 TEXT 類型存儲長文本
+
+  // 時間戳
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯關係
+  posts     Post[]           // 一對多：一個用戶可以有多篇文章
+  comments  Comment[]        // 一對多：一個用戶可以有多條評論
+  profile   Profile?         // 一對一：一個用戶有一個詳細資料
+  likes     Like[]           // 一對多：一個用戶可以點贊多篇文章
+
+  // 索引：加快郵箱查詢
+  @@index([email])
+
+  // 表名映射（如果需要自定義表名）
+  @@map("users")
+}
+
+// 用戶角色枚舉
+enum Role {
+  USER      // 普通用戶
+  ADMIN     // 管理員
+  MODERATOR // 版主
+
+  @@map("roles")
+}
+
+// 用戶詳細資料表 - 與 User 一對一關係
+model Profile {
+  id          Int      @id @default(autoincrement())
+
+  // 外鍵：關聯到 User 表
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 個人信息
+  firstName   String?
+  lastName    String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  zipCode     String?
+
+  // 社交媒體鏈接
+  website     String?
+  twitter     String?
+  github      String?
+  linkedin    String?
+
+  // 偏好設置
+  language    String   @default("zh-TW")
+  timezone    String   @default("Asia/Taipei")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ============================================
+// 博客內容模型
+// ============================================
+
+// 文章表
+model Post {
+  id          Int      @id @default(autoincrement())
+
+  // 文章標題：必填
+  title       String
+
+  // URL 友好的標題（slug）：唯一
+  slug        String   @unique
+
+  // 文章內容：使用 TEXT 類型
+  content     String   @db.Text
+
+  // 摘要：可選
+  excerpt     String?
+
+  // 封面圖片：可選
+  coverImage  String?
+
+  // 發布狀態：默認為草稿
+  published   Boolean  @default(false)
+
+  // 瀏覽次數：默認為 0
+  viewCount   Int      @default(0)
+
+  // 作者 ID：外鍵
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // 分類 ID：外鍵（可選）
+  categoryId  Int?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // 時間戳
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  // 關聯關係
+  comments    Comment[]
+  tags        PostTag[]  // 多對多：通過中間表關聯標籤
+  likes       Like[]
+
+  // 複合索引：提升查詢性能
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([published, createdAt])
+  @@index([slug])
+
+  @@map("posts")
+}
+
+// 分類表
+model Category {
+  id          Int      @id @default(autoincrement())
+
+  name        String   @unique
+  slug        String   @unique
+  description String?
+
+  // 顏色標記（用於 UI 顯示）
+  color       String?
+
+  // 圖標
+  icon        String?
+
+  // 排序順序
+  order       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 關聯關係
+  posts       Post[]
+
+  @@map("categories")
+}
+
+// 標籤表
+model Tag {
+  id          Int      @id @default(autoincrement())
+
+  name        String   @unique
+  slug        String   @unique
+
+  createdAt   DateTime @default(now())
+
+  // 關聯關係
+  posts       PostTag[]  // 多對多：通過中間表關聯文章
+
+  @@map("tags")
+}
+
+// 文章-標籤關聯表（多對多中間表）
+model PostTag {
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  tagId       Int
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  assignedAt  DateTime @default(now())
+
+  // 複合主鍵
+  @@id([postId, tagId])
+
+  @@map("post_tags")
+}
+
+// ============================================
+// 互動模型
+// ============================================
+
+// 評論表
+model Comment {
+  id          Int      @id @default(autoincrement())
+
+  // 評論內容
+  content     String   @db.Text
+
+  // 作者 ID：外鍵
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // 文章 ID：外鍵
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // 父評論 ID：實現嵌套評論（可選）
+  parentId    Int?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+
+  // 是否已審核
+  isApproved  Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 索引
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+
+  @@map("comments")
+}
+
+// 點贊表
+model Like {
+  id          Int      @id @default(autoincrement())
+
+  // 用戶 ID：外鍵
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 文章 ID：外鍵
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  // 複合唯一索引：確保一個用戶只能對同一篇文章點贊一次
+  @@unique([userId, postId])
+
+  @@map("likes")
+}
+
+// ============================================
+// 高級功能模型
+// ============================================
+
+// 審計日誌表 - 記錄重要操作
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+
+  // 操作類型
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT
+
+  // 操作的表名
+  tableName   String
+
+  // 記錄 ID
+  recordId    Int?
+
+  // 用戶 ID（可選，某些操作可能沒有用戶）
+  userId      Int?
+
+  // IP 地址
+  ipAddress   String?
+
+  // 用戶代理
+  userAgent   String?
+
+  // 變更前的數據（JSON 格式）
+  oldData     Json?
+
+  // 變更後的數據（JSON 格式）
+  newData     Json?
+
+  createdAt   DateTime @default(now())
+
+  // 索引
+  @@index([userId])
+  @@index([tableName])
+  @@index([createdAt])
+
+  @@map("audit_logs")
+}
+
+// 文件上傳表
+model Upload {
+  id          Int      @id @default(autoincrement())
+
+  // 原始文件名
+  filename    String
+
+  // 存儲路徑
+  path        String   @unique
+
+  // 文件類型（MIME type）
+  mimeType    String
+
+  // 文件大小（字節）
+  size        Int
+
+  // 文件哈希（用於去重）
+  hash        String?  @unique
+
+  // 上傳者 ID
+  uploaderId  Int?
+
+  // 是否公開
+  isPublic    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  @@index([uploaderId])
+  @@index([hash])
+
+  @@map("uploads")
+}
+
+// 通知表
+model Notification {
+  id          Int      @id @default(autoincrement())
+
+  // 接收者 ID
+  recipientId Int
+
+  // 通知類型
+  type        NotificationType
+
+  // 通知標題
+  title       String
+
+  // 通知內容
+  content     String   @db.Text
+
+  // 關聯的實體（JSON 格式）
+  // 例如：{ "postId": 123, "commentId": 456 }
+  data        Json?
+
+  // 是否已讀
+  isRead      Boolean  @default(false)
+
+  // 讀取時間
+  readAt      DateTime?
+
+  createdAt   DateTime @default(now())
+
+  // 索引
+  @@index([recipientId, isRead])
+
+  @@map("notifications")
+}
+
+// 通知類型枚舉
+enum NotificationType {
+  COMMENT      // 新評論
+  LIKE         // 新點贊
+  MENTION      // 被提及
+  FOLLOW       // 新關注者
+  SYSTEM       // 系統通知
+
+  @@map("notification_types")
+}
+
+// ============================================
+// 數據類型示例
+// ============================================
+
+// 展示各種 Prisma 支持的數據類型
+model DataTypeExample {
+  // 整數類型
+  id          Int      @id @default(autoincrement())
+  bigIntField BigInt   // 大整數
+
+  // 字符串類型
+  stringField String
+  textField   String   @db.Text        // 長文本
+  varcharField String  @db.VarChar(100) // 限制長度
+
+  // 布爾類型
+  boolField   Boolean
+
+  // 日期時間類型
+  dateField   DateTime @db.Date        // 僅日期
+  timeField   DateTime @db.Time        // 僅時間
+  datetimeField DateTime               // 日期+時間
+
+  // 浮點數類型
+  floatField  Float
+  decimalField Decimal @db.Decimal(10, 2) // 精確小數（10位，2位小數）
+
+  // JSON 類型
+  jsonField   Json     // 存儲 JSON 數據
+
+  // 字節類型
+  bytesField  Bytes    // 二進制數據
+
+  // 可選字段（nullable）
+  optionalField String?
+
+  // 數組類型（僅 PostgreSQL 支持）
+  // tagsArray String[]
+
+  @@map("data_type_examples")
+}
+
+// ============================================
+// 注意事項和最佳實踐
+// ============================================
+
+// 1. 命名規範：
+//    - 模型名使用 PascalCase（首字母大寫）
+//    - 字段名使用 camelCase
+//    - 表名使用 snake_case（通過 @@map 指定）
+
+// 2. 索引策略：
+//    - 為外鍵添加索引（@index）
+//    - 為經常查詢的字段添加索引
+//    - 為唯一字段使用 @unique
+//    - 使用複合索引優化多字段查詢
+
+// 3. 刪除策略（onDelete）：
+//    - Cascade：級聯刪除（刪除父記錄時刪除子記錄）
+//    - SetNull：設為 NULL（刪除父記錄時將外鍵設為 NULL）
+//    - Restrict：限制刪除（有子記錄時禁止刪除父記錄）
+//    - NoAction：不做任何操作
+
+// 4. 默認值：
+//    - 使用 @default 設置默認值
+//    - now() 用於時間戳
+//    - autoincrement() 用於自增 ID
+//    - uuid() 用於 UUID
+//    - cuid() 用於 CUID
+
+// 5. 性能優化：
+//    - 合理使用索引
+//    - 避免過度使用 JSON 類型
+//    - 使用適當的數據類型
+//    - 考慮數據庫分區（對於大表）
