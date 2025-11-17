@@ -5,6 +5,7 @@
 import { Pool } from 'pg';
 import db from '../config/database';
 import { Comment, CommentCreateDto, CommentUpdateDto } from '../types';
+import { DatabaseRow } from '../../../../common/types/database.js';
 
 export class CommentModel {
   private pool: Pool;
@@ -99,7 +100,7 @@ export class CommentModel {
     return result.rowCount ?? 0;
   }
 
-  private mapRow(row: any): Comment {
+  private mapRow(row: DatabaseRow): Comment {
     return {
       id: row.id,
       postId: row.post_id,

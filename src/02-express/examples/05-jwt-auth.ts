@@ -20,12 +20,30 @@ app.use(express.json());
 
 // ==================== 配置 ====================
 
+// ⚠️ SECURITY WARNING: 這些是示例用的配置
+// 在生產環境中，必須：
+// 1. 使用環境變量存儲所有密鑰
+// 2. JWT_SECRET 至少 64 個字符
+// 3. BCRYPT_ROUNDS 至少 12
+// 4. 生成密鑰：node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+// 檢查生產環境
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('❌ FATAL: JWT_SECRET must be set in production environment');
+}
+
 const CONFIG = {
-  JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+  JWT_SECRET: process.env.JWT_SECRET || (() => {
+    console.warn('⚠️  WARNING: Using insecure default JWT_SECRET. Set JWT_SECRET environment variable!');
+    return 'INSECURE-EXAMPLE-KEY-DO-NOT-USE-IN-PRODUCTION';
+  })(),
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || (() => {
+    console.warn('⚠️  WARNING: Using insecure default JWT_REFRESH_SECRET. Set JWT_REFRESH_SECRET environment variable!');
+    return 'INSECURE-EXAMPLE-REFRESH-KEY-DO-NOT-USE-IN-PRODUCTION';
+  })(),
   JWT_EXPIRES_IN: '15m',  // Access token 有效期 15 分鐘
   JWT_REFRESH_EXPIRES_IN: '7d',  // Refresh token 有效期 7 天
-  BCRYPT_ROUNDS: 10
+  BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS || '12', 10)
 };
 
 // ==================== 類型定義 ====================

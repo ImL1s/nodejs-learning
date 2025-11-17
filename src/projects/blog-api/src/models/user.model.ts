@@ -6,6 +6,8 @@ import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import db from '../config/database';
 import { User, UserCreateDto, UserUpdateDto } from '../types';
+import { SECURITY_CONFIG } from '../../../../common/config/env.js';
+import { DatabaseRow, QueryParam } from '../../../../common/types/database.js';
 
 export class UserModel {
   private pool: Pool;
@@ -15,7 +17,7 @@ export class UserModel {
   }
 
   async create(userData: UserCreateDto): Promise<User> {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(userData.password, SECURITY_CONFIG.bcrypt.rounds);
 
     const query = `
       INSERT INTO users (username, email, password, bio)
@@ -59,7 +61,7 @@ export class UserModel {
 
   async update(id: string, userData: UserUpdateDto): Promise<User | null> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: QueryParam[] = [];
     let paramIndex = 1;
 
     if (userData.username !== undefined) {
@@ -120,7 +122,7 @@ export class UserModel {
     return bcrypt.compare(password, user.password);
   }
 
-  private mapRow(row: any): User {
+  private mapRow(row: DatabaseRow): User {
     return {
       id: row.id,
       username: row.username,

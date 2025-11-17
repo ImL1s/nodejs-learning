@@ -6,6 +6,7 @@ import { Pool } from 'pg';
 import db from '../config/database';
 import { Post, PostCreateDto, PostUpdateDto } from '../types';
 import { generateUniqueSlug } from '../utils/helpers';
+import { DatabaseRow, QueryParam } from '../../../../common/types/database.js';
 
 export class PostModel {
   private pool: Pool;
@@ -83,7 +84,7 @@ export class PostModel {
 
   async update(id: string, postData: PostUpdateDto): Promise<Post | null> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: QueryParam[] = [];
     let paramIndex = 1;
 
     if (postData.title !== undefined) {
@@ -161,7 +162,7 @@ export class PostModel {
     return parseInt(result.rows[0].count);
   }
 
-  private mapRow(row: any): Post {
+  private mapRow(row: DatabaseRow): Post {
     return {
       id: row.id,
       userId: row.user_id,

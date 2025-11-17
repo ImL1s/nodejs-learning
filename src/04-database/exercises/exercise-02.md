@@ -640,8 +640,9 @@ npm install -D @types/bcrypt
 ```typescript
 import bcrypt from 'bcrypt'
 
-// 哈希密碼
-const hashedPassword = await bcrypt.hash(password, 10)
+// 哈希密碼 - 使用至少 12 輪以確保安全性
+const BCRYPT_ROUNDS = 12; // 生產環境建議 12-14
+const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS)
 
 // 驗證密碼
 const isValid = await bcrypt.compare(password, hashedPassword)

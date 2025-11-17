@@ -3,13 +3,34 @@
  */
 
 import express, { Application, Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import todoRoutes from './routes/todo.routes';
+import { SECURITY_CONFIG } from '../../../common/config/env.js';
 
 const app: Application = express();
 
-// 中間件
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 安全中間件
+app.use(helmet()); // HTTP 安全標頭
+app.use(cors({
+  origin: SECURITY_CONFIG.cors.origins,
+  credentials: true,
+}));
+
+// 速率限制
+const limiter = rateLimit({
+  windowMs: SECURITY_CONFIG.rateLimit.windowMs,
+  max: SECURITY_CONFIG.rateLimit.max,
+  message: '請求過於頻繁，請稍後再試',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// 請求解析中間件
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 請求日誌中間件
 app.use((req: Request, res: Response, next: NextFunction) => {

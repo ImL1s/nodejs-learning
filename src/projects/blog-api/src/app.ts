@@ -4,20 +4,41 @@
 
 import express, { Application, Request, Response } from 'express';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.routes';
 import postRoutes from './routes/post.routes';
 import commentRoutes from './routes/comment.routes';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import logger from './config/logger';
+import { env, SECURITY_CONFIG } from '../../../common/config/env.js';
 
 // Load environment variables
 dotenv.config();
 
 const app: Application = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security Middleware
+app.use(helmet()); // HTTP security headers
+app.use(cors({
+  origin: SECURITY_CONFIG.cors.origins,
+  credentials: true,
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: SECURITY_CONFIG.rateLimit.windowMs,
+  max: SECURITY_CONFIG.rateLimit.max,
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
 app.use((req: Request, res: Response, next) => {

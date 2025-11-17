@@ -5,8 +5,9 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, JwtPayload, AuthenticationError } from '../types';
+import { SECURITY_CONFIG } from '../../../../common/config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = SECURITY_CONFIG.jwt.secret;
 
 export const authenticate = async (
   req: AuthRequest,
@@ -73,6 +74,6 @@ export const generateToken = (userId: string, email: string): string => {
   const payload: JwtPayload = { userId, email };
 
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: SECURITY_CONFIG.jwt.expiresIn,
   });
 };
