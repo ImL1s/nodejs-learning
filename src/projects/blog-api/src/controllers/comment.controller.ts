@@ -62,19 +62,14 @@ export const getPostComments = async (
       throw new NotFoundError('Post');
     }
 
-    const comments = await commentModel.findByPostId(postId, limit, offset);
+    // Use JOIN query to fetch comments with authors in a single query (fixes N+1 problem)
+    const commentsData = await commentModel.findByPostIdWithAuthors(postId, limit, offset);
     const total = await commentModel.countByPostId(postId);
 
-    // Get author info for each comment
-    const commentsWithAuthors = await Promise.all(
-      comments.map(async (comment) => {
-        const author = await userModel.findById(comment.userId);
-        return {
-          ...comment,
-          author: author ? sanitizeUser(author) : null,
-        };
-      })
-    );
+    const commentsWithAuthors = commentsData.map(({ comment, author }) => ({
+      ...comment,
+      author: author ? sanitizeUser(author) : null,
+    }));
 
     res.json({
       success: true,

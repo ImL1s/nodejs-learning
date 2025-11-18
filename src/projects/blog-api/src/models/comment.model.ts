@@ -46,6 +46,47 @@ export class CommentModel {
     return result.rows.map(this.mapRow);
   }
 
+  /**
+   * Find comments by post ID with author info in a single query (fixes N+1 problem)
+   */
+  async findByPostIdWithAuthors(
+    postId: string,
+    limit: number = 100,
+    offset: number = 0
+  ): Promise<Array<{ comment: Comment; author: any }>> {
+    const query = `
+      SELECT
+        comments.*,
+        users.id as author_id,
+        users.username as author_username,
+        users.email as author_email,
+        users.bio as author_bio,
+        users.avatar_url as author_avatar_url,
+        users.created_at as author_created_at,
+        users.updated_at as author_updated_at
+      FROM comments
+      LEFT JOIN users ON comments.user_id = users.id
+      WHERE comments.post_id = $1
+      ORDER BY comments.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await this.pool.query(query, [postId, limit, offset]);
+
+    return result.rows.map(row => ({
+      comment: this.mapRow(row),
+      author: row.author_id ? {
+        id: row.author_id,
+        username: row.author_username,
+        email: row.author_email,
+        bio: row.author_bio,
+        avatarUrl: row.author_avatar_url,
+        createdAt: row.author_created_at,
+        updatedAt: row.author_updated_at,
+      } : null,
+    }));
+  }
+
   async findByUserId(userId: string, limit: number = 50, offset: number = 0): Promise<Comment[]> {
     const query = `
       SELECT * FROM comments

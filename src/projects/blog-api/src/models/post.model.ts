@@ -70,6 +70,51 @@ export class PostModel {
     return result.rows.map(this.mapRow);
   }
 
+  /**
+   * Find all posts with authors and comments count in a single query (fixes N+1 problem)
+   */
+  async findAllWithAuthorsAndComments(
+    limit: number = 50,
+    offset: number = 0,
+    publishedOnly: boolean = false
+  ): Promise<Array<{ post: Post; author: any; commentsCount: number }>> {
+    const query = `
+      SELECT
+        posts.*,
+        users.id as author_id,
+        users.username as author_username,
+        users.email as author_email,
+        users.bio as author_bio,
+        users.avatar_url as author_avatar_url,
+        users.created_at as author_created_at,
+        users.updated_at as author_updated_at,
+        COUNT(comments.id) as comments_count
+      FROM posts
+      LEFT JOIN users ON posts.user_id = users.id
+      LEFT JOIN comments ON posts.id = comments.post_id
+      WHERE ($1 = false OR posts.published = true)
+      GROUP BY posts.id, users.id
+      ORDER BY posts.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await this.pool.query(query, [publishedOnly, limit, offset]);
+
+    return result.rows.map(row => ({
+      post: this.mapRow(row),
+      author: row.author_id ? {
+        id: row.author_id,
+        username: row.author_username,
+        email: row.author_email,
+        bio: row.author_bio,
+        avatarUrl: row.author_avatar_url,
+        createdAt: row.author_created_at,
+        updatedAt: row.author_updated_at,
+      } : null,
+      commentsCount: parseInt(row.comments_count, 10),
+    }));
+  }
+
   async findByUserId(userId: string, limit: number = 50, offset: number = 0): Promise<Post[]> {
     const query = `
       SELECT * FROM posts

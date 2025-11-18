@@ -47,22 +47,16 @@ export const getAllPosts = async (
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const offset = (page - 1) * limit;
 
-    const posts = await postModel.findAll(limit, offset, true);
+    // Use JOIN query to fetch posts, authors, and comments count in a single query (fixes N+1 problem)
+    const postsData = await postModel.findAllWithAuthorsAndComments(limit, offset, true);
     const total = await postModel.count(true);
 
-    // Get author info for each post
-    const postsWithAuthors = await Promise.all(
-      posts.map(async (post) => {
-        const author = await userModel.findById(post.userId);
-        const commentsCount = await commentModel.countByPostId(post.id);
-
-        return {
-          ...post,
-          author: author ? sanitizeUser(author) : null,
-          commentsCount,
-        };
-      })
-    );
+    // Sanitize user data
+    const postsWithAuthors = postsData.map(({ post, author, commentsCount }) => ({
+      ...post,
+      author: author ? sanitizeUser(author) : null,
+      commentsCount,
+    }));
 
     res.json({
       success: true,
@@ -93,18 +87,14 @@ export const getPostById = async (
     }
 
     const author = await userModel.findById(post.userId);
-    const comments = await commentModel.findByPostId(post.id);
 
-    // Get comment authors
-    const commentsWithAuthors = await Promise.all(
-      comments.map(async (comment) => {
-        const commentAuthor = await userModel.findById(comment.userId);
-        return {
-          ...comment,
-          author: commentAuthor ? sanitizeUser(commentAuthor) : null,
-        };
-      })
-    );
+    // Use JOIN query to fetch comments with authors in a single query (fixes N+1 problem)
+    const commentsData = await commentModel.findByPostIdWithAuthors(post.id);
+
+    const commentsWithAuthors = commentsData.map(({ comment, author }) => ({
+      ...comment,
+      author: author ? sanitizeUser(author) : null,
+    }));
 
     res.json({
       success: true,
