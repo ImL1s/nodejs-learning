@@ -16,7 +16,7 @@ dotenv.config();
 const envSchema = z.object({
   // 基本配置
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number).default('3000'),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   HOST: z.string().default('127.0.0.1'),
 
   // JWT 配置
@@ -29,23 +29,23 @@ const envSchema = z.object({
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
 
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
-  RATE_LIMIT_MAX: z.string().transform(Number).default('100'),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(900000),
+  RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(100),
 
   // Bcrypt
-  BCRYPT_ROUNDS: z.string().transform(Number).default('12'),
+  BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(31).default(12),
 
   // 數據庫（可選，用於需要數據庫的項目）
   DATABASE_URL: z.string().url().optional(),
   DB_HOST: z.string().optional(),
-  DB_PORT: z.string().transform(Number).optional(),
+  DB_PORT: z.coerce.number().int().min(1).max(65535).optional(),
   DB_NAME: z.string().optional(),
   DB_USER: z.string().optional(),
   DB_PASSWORD: z.string().optional(),
 
   // Redis（可選）
   REDIS_HOST: z.string().optional(),
-  REDIS_PORT: z.string().transform(Number).optional(),
+  REDIS_PORT: z.coerce.number().int().min(1).max(65535).optional(),
   REDIS_PASSWORD: z.string().optional(),
 });
 

@@ -12,7 +12,28 @@ import { SECURITY_CONFIG } from '../../../common/config/env.js';
 const app: Application = express();
 
 // 安全中間件
-app.use(helmet()); // HTTP 安全標頭
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 app.use(cors({
   origin: SECURITY_CONFIG.cors.origins,
   credentials: true,
@@ -74,10 +95,13 @@ app.use((req: Request, res: Response) => {
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('❌ Error:', err);
 
+  // 在生產環境中不洩露錯誤詳情
+  const isProduction = process.env.NODE_ENV === 'production';
+
   res.status(500).json({
     success: false,
     error: 'Internal server error',
-    message: err.message,
+    ...(isProduction ? {} : { message: err.message, stack: err.stack }),
   });
 });
 
