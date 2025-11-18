@@ -108,6 +108,12 @@ export class Database {
       await client.query('CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id)');
 
+      // Performance indexes for ORDER BY queries (fixes missing indexes)
+      await client.query('CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC)');
+      // Composite index for published posts ordered by created_at
+      await client.query('CREATE INDEX IF NOT EXISTS idx_posts_published_created_at ON posts(published, created_at DESC)');
+
       await client.query('COMMIT');
       console.log('Database tables initialized successfully');
     } catch (error) {
