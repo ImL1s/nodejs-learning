@@ -115,7 +115,7 @@ export class UserModel {
     const query = 'SELECT COUNT(*) FROM users';
     const result = await this.pool.query(query);
 
-    return parseInt(result.rows[0].count);
+    return parseInt(result.rows[0].count, 10);
   }
 
   async verifyPassword(user: User, password: string): Promise<boolean> {

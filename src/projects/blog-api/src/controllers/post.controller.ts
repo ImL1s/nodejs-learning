@@ -43,8 +43,8 @@ export const getAllPosts = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
     const offset = (page - 1) * limit;
 
     const posts = await postModel.findAll(limit, offset, true);
@@ -188,8 +188,8 @@ export const getUserPosts = async (
 ): Promise<void> => {
   try {
     const { userId } = req.params;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
     const offset = (page - 1) * limit;
 
     const posts = await postModel.findByUserId(userId, limit, offset);

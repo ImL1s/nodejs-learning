@@ -152,14 +152,14 @@ export class PostModel {
     }
 
     const result = await this.pool.query(query);
-    return parseInt(result.rows[0].count);
+    return parseInt(result.rows[0].count, 10);
   }
 
   async countByUserId(userId: string): Promise<number> {
     const query = 'SELECT COUNT(*) FROM posts WHERE user_id = $1';
     const result = await this.pool.query(query, [userId]);
 
-    return parseInt(result.rows[0].count);
+    return parseInt(result.rows[0].count, 10);
   }
 
   private mapRow(row: DatabaseRow): Post {
