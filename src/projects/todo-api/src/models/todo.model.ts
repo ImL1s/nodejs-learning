@@ -131,6 +131,14 @@ class TodoModel {
       byPriority,
     };
   }
+
+  /**
+   * 重置模型（用於測試）
+   */
+  reset() {
+    this.todos = [];
+    this.nextId = 1;
+  }
 }
 
 export default new TodoModel();

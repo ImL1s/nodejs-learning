@@ -3,111 +3,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import TodoModelClass from '../../src/models/todo.model.js';
 
-// Create a simple TodoModel class for testing
-class TodoModel {
-  private todos: Array<{
-    id: number;
-    title: string;
-    description?: string;
-    completed: boolean;
-    priority: 'low' | 'medium' | 'high';
-    createdAt: Date;
-    updatedAt: Date;
-  }> = [];
-  private nextId: number = 1;
-
-  findAll(query: any = {}) {
-    let result = [...this.todos];
-
-    if (query.completed !== undefined) {
-      const isCompleted = query.completed === 'true';
-      result = result.filter((todo) => todo.completed === isCompleted);
-    }
-
-    if (query.priority) {
-      result = result.filter((todo) => todo.priority === query.priority);
-    }
-
-    if (query.sort) {
-      const order = query.order === 'desc' ? -1 : 1;
-      result.sort((a: any, b: any) => {
-        const aVal = a[query.sort!];
-        const bVal = b[query.sort!];
-        if (aVal > bVal) return order;
-        if (aVal < bVal) return -order;
-        return 0;
-      });
-    }
-
-    return result;
-  }
-
-  findById(id: number) {
-    return this.todos.find((todo) => todo.id === id);
-  }
-
-  create(data: any) {
-    const newTodo = {
-      id: this.nextId++,
-      title: data.title,
-      description: data.description,
-      completed: false,
-      priority: data.priority || 'medium' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.todos.push(newTodo);
-    return newTodo;
-  }
-
-  update(id: number, data: any) {
-    const index = this.todos.findIndex((todo) => todo.id === id);
-    if (index === -1) return null;
-
-    this.todos[index] = {
-      ...this.todos[index],
-      ...data,
-      updatedAt: new Date(),
-    };
-    return this.todos[index];
-  }
-
-  delete(id: number) {
-    const index = this.todos.findIndex((todo) => todo.id === id);
-    if (index === -1) return false;
-
-    this.todos.splice(index, 1);
-    return true;
-  }
-
-  toggleComplete(id: number) {
-    const todo = this.findById(id);
-    if (!todo) return null;
-
-    return this.update(id, { completed: !todo.completed });
-  }
-
-  getStats() {
-    const total = this.todos.length;
-    const completed = this.todos.filter((t) => t.completed).length;
-    const pending = total - completed;
-    const byPriority = {
-      high: this.todos.filter((t) => t.priority === 'high').length,
-      medium: this.todos.filter((t) => t.priority === 'medium').length,
-      low: this.todos.filter((t) => t.priority === 'low').length,
-    };
-
-    return { total, completed, pending, byPriority };
-  }
-}
-
+// We need to access the class to create fresh instances for testing
+// The actual export is a singleton, so we'll work with that
 describe('TodoModel', () => {
-  let todoModel: TodoModel;
-
+  // We'll use the singleton instance but clear its state before each test
   beforeEach(() => {
-    // Create a fresh instance for each test
-    todoModel = new TodoModel();
+    // Reset the model state using the reset method
+    TodoModelClass.reset();
   });
 
   describe('create', () => {
@@ -120,7 +24,7 @@ describe('TodoModel', () => {
       };
 
       // Act
-      const todo = todoModel.create(data);
+      const todo = TodoModelClass.create(data);
 
       // Assert
       expect(todo).toMatchObject({
@@ -141,7 +45,7 @@ describe('TodoModel', () => {
       };
 
       // Act
-      const todo = todoModel.create(data);
+      const todo = TodoModelClass.create(data);
 
       // Assert
       expect(todo.priority).toBe('medium');
@@ -149,9 +53,9 @@ describe('TodoModel', () => {
 
     it('should auto-increment IDs', () => {
       // Act
-      const todo1 = todoModel.create({ title: 'Todo 1' });
-      const todo2 = todoModel.create({ title: 'Todo 2' });
-      const todo3 = todoModel.create({ title: 'Todo 3' });
+      const todo1 = TodoModelClass.create({ title: 'Todo 1' });
+      const todo2 = TodoModelClass.create({ title: 'Todo 2' });
+      const todo3 = TodoModelClass.create({ title: 'Todo 3' });
 
       // Assert
       expect(todo1.id).toBe(1);
@@ -161,7 +65,7 @@ describe('TodoModel', () => {
 
     it('should set completed to false by default', () => {
       // Act
-      const todo = todoModel.create({ title: 'Test Todo' });
+      const todo = TodoModelClass.create({ title: 'Test Todo' });
 
       // Assert
       expect(todo.completed).toBe(false);
@@ -169,7 +73,7 @@ describe('TodoModel', () => {
 
     it('should handle todos without description', () => {
       // Act
-      const todo = todoModel.create({ title: 'Test Todo' });
+      const todo = TodoModelClass.create({ title: 'Test Todo' });
 
       // Assert
       expect(todo.description).toBeUndefined();
@@ -178,15 +82,25 @@ describe('TodoModel', () => {
 
   describe('findAll', () => {
     beforeEach(() => {
-      // Set up test data
-      todoModel.create({ title: 'Todo 1', priority: 'high' });
-      todoModel.create({ title: 'Todo 2', priority: 'medium' });
-      todoModel.create({ title: 'Todo 3', priority: 'low' });
+      // Set up test data with small delays to ensure different timestamps
+      TodoModelClass.create({ title: 'Todo 1', priority: 'high' });
+
+      // Small delay to ensure different createdAt
+      const start1 = Date.now();
+      while (Date.now() - start1 < 2) { /* wait */ }
+
+      TodoModelClass.create({ title: 'Todo 2', priority: 'medium' });
+
+      // Small delay to ensure different createdAt
+      const start2 = Date.now();
+      while (Date.now() - start2 < 2) { /* wait */ }
+
+      TodoModelClass.create({ title: 'Todo 3', priority: 'low' });
     });
 
     it('should return all todos when no query is provided', () => {
       // Act
-      const todos = todoModel.findAll();
+      const todos = TodoModelClass.findAll();
 
       // Assert
       expect(todos).toHaveLength(3);
@@ -194,11 +108,11 @@ describe('TodoModel', () => {
 
     it('should filter by completed status', () => {
       // Arrange
-      todoModel.update(1, { completed: true });
+      TodoModelClass.update(1, { completed: true });
 
       // Act
-      const completedTodos = todoModel.findAll({ completed: 'true' });
-      const pendingTodos = todoModel.findAll({ completed: 'false' });
+      const completedTodos = TodoModelClass.findAll({ completed: 'true' });
+      const pendingTodos = TodoModelClass.findAll({ completed: 'false' });
 
       // Assert
       expect(completedTodos).toHaveLength(1);
@@ -207,9 +121,9 @@ describe('TodoModel', () => {
 
     it('should filter by priority', () => {
       // Act
-      const highPriority = todoModel.findAll({ priority: 'high' });
-      const mediumPriority = todoModel.findAll({ priority: 'medium' });
-      const lowPriority = todoModel.findAll({ priority: 'low' });
+      const highPriority = TodoModelClass.findAll({ priority: 'high' });
+      const mediumPriority = TodoModelClass.findAll({ priority: 'medium' });
+      const lowPriority = TodoModelClass.findAll({ priority: 'low' });
 
       // Assert
       expect(highPriority).toHaveLength(1);
@@ -219,7 +133,7 @@ describe('TodoModel', () => {
 
     it('should sort by createdAt in ascending order', () => {
       // Act
-      const todos = todoModel.findAll({ sort: 'createdAt', order: 'asc' });
+      const todos = TodoModelClass.findAll({ sort: 'createdAt', order: 'asc' });
 
       // Assert
       expect(todos[0].id).toBe(1);
@@ -228,7 +142,7 @@ describe('TodoModel', () => {
 
     it('should sort by createdAt in descending order', () => {
       // Act
-      const todos = todoModel.findAll({ sort: 'createdAt', order: 'desc' });
+      const todos = TodoModelClass.findAll({ sort: 'createdAt', order: 'desc' });
 
       // Assert
       expect(todos[0].id).toBe(3);
@@ -237,11 +151,11 @@ describe('TodoModel', () => {
 
     it('should combine filters and sorting', () => {
       // Arrange
-      todoModel.update(1, { completed: true });
-      todoModel.update(3, { completed: true });
+      TodoModelClass.update(1, { completed: true });
+      TodoModelClass.update(3, { completed: true });
 
       // Act
-      const todos = todoModel.findAll({
+      const todos = TodoModelClass.findAll({
         completed: 'true',
         sort: 'createdAt',
         order: 'desc',
@@ -257,10 +171,10 @@ describe('TodoModel', () => {
   describe('findById', () => {
     it('should return todo if ID exists', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
 
       // Act
-      const found = todoModel.findById(created.id);
+      const found = TodoModelClass.findById(created.id);
 
       // Assert
       expect(found).toEqual(created);
@@ -268,7 +182,7 @@ describe('TodoModel', () => {
 
     it('should return undefined if ID does not exist', () => {
       // Act
-      const found = todoModel.findById(999);
+      const found = TodoModelClass.findById(999);
 
       // Assert
       expect(found).toBeUndefined();
@@ -276,12 +190,12 @@ describe('TodoModel', () => {
 
     it('should return correct todo when multiple exist', () => {
       // Arrange
-      todoModel.create({ title: 'Todo 1' });
-      const todo2 = todoModel.create({ title: 'Todo 2' });
-      todoModel.create({ title: 'Todo 3' });
+      TodoModelClass.create({ title: 'Todo 1' });
+      const todo2 = TodoModelClass.create({ title: 'Todo 2' });
+      TodoModelClass.create({ title: 'Todo 3' });
 
       // Act
-      const found = todoModel.findById(todo2.id);
+      const found = TodoModelClass.findById(todo2.id);
 
       // Assert
       expect(found?.title).toBe('Todo 2');
@@ -291,10 +205,10 @@ describe('TodoModel', () => {
   describe('update', () => {
     it('should update todo successfully', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Original Title' });
+      const created = TodoModelClass.create({ title: 'Original Title' });
 
       // Act
-      const updated = todoModel.update(created.id, {
+      const updated = TodoModelClass.update(created.id, {
         title: 'Updated Title',
         completed: true,
       });
@@ -309,7 +223,7 @@ describe('TodoModel', () => {
 
     it('should update updatedAt timestamp', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
       const originalUpdatedAt = created.updatedAt;
 
       // Wait a bit to ensure different timestamp
@@ -320,7 +234,7 @@ describe('TodoModel', () => {
       }
 
       // Act
-      const updated = todoModel.update(created.id, { title: 'Updated' });
+      const updated = TodoModelClass.update(created.id, { title: 'Updated' });
 
       // Assert
       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
@@ -330,14 +244,14 @@ describe('TodoModel', () => {
 
     it('should partially update todo', () => {
       // Arrange
-      const created = todoModel.create({
+      const created = TodoModelClass.create({
         title: 'Test Todo',
         description: 'Original description',
         priority: 'high',
       });
 
       // Act
-      const updated = todoModel.update(created.id, {
+      const updated = TodoModelClass.update(created.id, {
         description: 'Updated description',
       });
 
@@ -351,7 +265,7 @@ describe('TodoModel', () => {
 
     it('should return null if todo does not exist', () => {
       // Act
-      const updated = todoModel.update(999, { title: 'Updated' });
+      const updated = TodoModelClass.update(999, { title: 'Updated' });
 
       // Assert
       expect(updated).toBeNull();
@@ -359,15 +273,15 @@ describe('TodoModel', () => {
 
     it('should preserve other fields when updating', () => {
       // Arrange
-      const created = todoModel.create({
+      const created = TodoModelClass.create({
         title: 'Test Todo',
         description: 'Test description',
         priority: 'high',
       });
 
       // Act
-      todoModel.update(created.id, { completed: true });
-      const found = todoModel.findById(created.id);
+      TodoModelClass.update(created.id, { completed: true });
+      const found = TodoModelClass.findById(created.id);
 
       // Assert
       expect(found).toMatchObject({
@@ -382,19 +296,19 @@ describe('TodoModel', () => {
   describe('delete', () => {
     it('should delete todo successfully', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
 
       // Act
-      const result = todoModel.delete(created.id);
+      const result = TodoModelClass.delete(created.id);
 
       // Assert
       expect(result).toBe(true);
-      expect(todoModel.findById(created.id)).toBeUndefined();
+      expect(TodoModelClass.findById(created.id)).toBeUndefined();
     });
 
     it('should return false if todo does not exist', () => {
       // Act
-      const result = todoModel.delete(999);
+      const result = TodoModelClass.delete(999);
 
       // Assert
       expect(result).toBe(false);
@@ -402,28 +316,28 @@ describe('TodoModel', () => {
 
     it('should not affect other todos', () => {
       // Arrange
-      const todo1 = todoModel.create({ title: 'Todo 1' });
-      const todo2 = todoModel.create({ title: 'Todo 2' });
-      const todo3 = todoModel.create({ title: 'Todo 3' });
+      const todo1 = TodoModelClass.create({ title: 'Todo 1' });
+      const todo2 = TodoModelClass.create({ title: 'Todo 2' });
+      const todo3 = TodoModelClass.create({ title: 'Todo 3' });
 
       // Act
-      todoModel.delete(todo2.id);
+      TodoModelClass.delete(todo2.id);
 
       // Assert
-      expect(todoModel.findById(todo1.id)).toBeDefined();
-      expect(todoModel.findById(todo2.id)).toBeUndefined();
-      expect(todoModel.findById(todo3.id)).toBeDefined();
+      expect(TodoModelClass.findById(todo1.id)).toBeDefined();
+      expect(TodoModelClass.findById(todo2.id)).toBeUndefined();
+      expect(TodoModelClass.findById(todo3.id)).toBeDefined();
     });
 
     it('should reduce total count after deletion', () => {
       // Arrange
-      todoModel.create({ title: 'Todo 1' });
-      todoModel.create({ title: 'Todo 2' });
+      TodoModelClass.create({ title: 'Todo 1' });
+      TodoModelClass.create({ title: 'Todo 2' });
 
       // Act
-      const beforeCount = todoModel.findAll().length;
-      todoModel.delete(1);
-      const afterCount = todoModel.findAll().length;
+      const beforeCount = TodoModelClass.findAll().length;
+      TodoModelClass.delete(1);
+      const afterCount = TodoModelClass.findAll().length;
 
       // Assert
       expect(beforeCount).toBe(2);
@@ -434,10 +348,10 @@ describe('TodoModel', () => {
   describe('toggleComplete', () => {
     it('should toggle completed from false to true', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
 
       // Act
-      const toggled = todoModel.toggleComplete(created.id);
+      const toggled = TodoModelClass.toggleComplete(created.id);
 
       // Assert
       expect(toggled?.completed).toBe(true);
@@ -445,11 +359,11 @@ describe('TodoModel', () => {
 
     it('should toggle completed from true to false', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
-      todoModel.update(created.id, { completed: true });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
+      TodoModelClass.update(created.id, { completed: true });
 
       // Act
-      const toggled = todoModel.toggleComplete(created.id);
+      const toggled = TodoModelClass.toggleComplete(created.id);
 
       // Assert
       expect(toggled?.completed).toBe(false);
@@ -457,7 +371,7 @@ describe('TodoModel', () => {
 
     it('should return null if todo does not exist', () => {
       // Act
-      const toggled = todoModel.toggleComplete(999);
+      const toggled = TodoModelClass.toggleComplete(999);
 
       // Assert
       expect(toggled).toBeNull();
@@ -465,7 +379,7 @@ describe('TodoModel', () => {
 
     it('should update updatedAt when toggling', () => {
       // Arrange
-      const created = todoModel.create({ title: 'Test Todo' });
+      const created = TodoModelClass.create({ title: 'Test Todo' });
       const originalUpdatedAt = created.updatedAt;
 
       // Wait a bit
@@ -476,7 +390,7 @@ describe('TodoModel', () => {
       }
 
       // Act
-      const toggled = todoModel.toggleComplete(created.id);
+      const toggled = TodoModelClass.toggleComplete(created.id);
 
       // Assert
       expect(toggled?.updatedAt.getTime()).toBeGreaterThan(
@@ -488,7 +402,7 @@ describe('TodoModel', () => {
   describe('getStats', () => {
     it('should return correct stats for empty list', () => {
       // Act
-      const stats = todoModel.getStats();
+      const stats = TodoModelClass.getStats();
 
       // Assert
       expect(stats).toEqual({
@@ -505,13 +419,13 @@ describe('TodoModel', () => {
 
     it('should return correct stats for todos', () => {
       // Arrange
-      todoModel.create({ title: 'Todo 1', priority: 'high' });
-      todoModel.create({ title: 'Todo 2', priority: 'medium' });
-      todoModel.create({ title: 'Todo 3', priority: 'low' });
-      todoModel.update(1, { completed: true });
+      TodoModelClass.create({ title: 'Todo 1', priority: 'high' });
+      TodoModelClass.create({ title: 'Todo 2', priority: 'medium' });
+      TodoModelClass.create({ title: 'Todo 3', priority: 'low' });
+      TodoModelClass.update(1, { completed: true });
 
       // Act
-      const stats = todoModel.getStats();
+      const stats = TodoModelClass.getStats();
 
       // Assert
       expect(stats).toEqual({
@@ -528,13 +442,13 @@ describe('TodoModel', () => {
 
     it('should update stats after operations', () => {
       // Arrange
-      const todo1 = todoModel.create({ title: 'Todo 1', priority: 'high' });
-      const todo2 = todoModel.create({ title: 'Todo 2', priority: 'high' });
+      const todo1 = TodoModelClass.create({ title: 'Todo 1', priority: 'high' });
+      const todo2 = TodoModelClass.create({ title: 'Todo 2', priority: 'high' });
 
       // Act
-      todoModel.update(todo1.id, { completed: true });
-      todoModel.delete(todo2.id);
-      const stats = todoModel.getStats();
+      TodoModelClass.update(todo1.id, { completed: true });
+      TodoModelClass.delete(todo2.id);
+      const stats = TodoModelClass.getStats();
 
       // Assert
       expect(stats).toEqual({
@@ -551,15 +465,15 @@ describe('TodoModel', () => {
 
     it('should count todos by priority correctly', () => {
       // Arrange
-      todoModel.create({ title: 'High 1', priority: 'high' });
-      todoModel.create({ title: 'High 2', priority: 'high' });
-      todoModel.create({ title: 'Medium 1', priority: 'medium' });
-      todoModel.create({ title: 'Low 1', priority: 'low' });
-      todoModel.create({ title: 'Low 2', priority: 'low' });
-      todoModel.create({ title: 'Low 3', priority: 'low' });
+      TodoModelClass.create({ title: 'High 1', priority: 'high' });
+      TodoModelClass.create({ title: 'High 2', priority: 'high' });
+      TodoModelClass.create({ title: 'Medium 1', priority: 'medium' });
+      TodoModelClass.create({ title: 'Low 1', priority: 'low' });
+      TodoModelClass.create({ title: 'Low 2', priority: 'low' });
+      TodoModelClass.create({ title: 'Low 3', priority: 'low' });
 
       // Act
-      const stats = todoModel.getStats();
+      const stats = TodoModelClass.getStats();
 
       // Assert
       expect(stats.byPriority).toEqual({

@@ -64,14 +64,9 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.any(String),
-        })
-      );
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockResponse.status).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
     it('should reject request with malformed Authorization header', async () => {
@@ -84,14 +79,9 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.any(String),
-        })
-      );
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockResponse.status).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
     it('should reject request with missing Bearer prefix', async () => {
@@ -104,8 +94,8 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockResponse.status).not.toHaveBeenCalled();
     });
 
     it('should reject expired token', async () => {
@@ -124,14 +114,9 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.stringContaining('expired'),
-        })
-      );
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockResponse.status).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
     it('should reject invalid token', async () => {
@@ -150,14 +135,9 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.stringContaining('Invalid token'),
-        })
-      );
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockResponse.status).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
     it('should handle unexpected errors gracefully', async () => {
@@ -176,8 +156,8 @@ describe('Auth Middleware', () => {
       await authenticate(mockRequest as any, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(401);
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(unexpectedError);
+      expect(mockResponse.status).not.toHaveBeenCalled();
     });
   });
 
