@@ -27,6 +27,20 @@ graph LR
     A -->|ESLint/Prettier| F(Code Quality)
 ```
 
+## 🧠 核心原理深度解析 (Deep Dive)
+
+### 1. Node.js 事件循環 (Event Loop)
+Node.js 為何能用單執行緒處理高並發？關鍵在於其基於 **libuv** 的事件循環機制：
+- **非阻塞 I/O**：網路與文件操作會交給作業系統或 libuv 的執行緒池，完成後通過回呼（Callback）通知主執行緒。
+- **階段 (Phases)**：理解 Timers → I/O Callbacks → Poll → Check 階段的切換順序，是解決效能瓶頸的核心。
+
+### 2. V8 引擎與 JIT 編譯
+為什麼 Node.js 運行快速？
+- **V8 引擎**：Google 開發的高性能引擎，將 JS 直接編譯成機器碼。
+- **JIT (Just-In-Time)**：透過監控代碼運行，對「熱代碼」進行極致優化。這也是為什麼本專案建議學習高性能框架如 `Fastify`。
+
+---
+
 ## 📚 學習路線
 
 ### [01. Node.js 基礎核心](src/01-basics/)
