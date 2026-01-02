@@ -5,6 +5,7 @@
 **使用 TypeScript 打造高效能、可維護的 Node.js 應用程式**
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
+[![Build Status](https://github.com/ImL1s/nodejs-learning/actions/workflows/ci.yml/badge.svg)](https://github.com/ImL1s/nodejs-learning/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-v5.3+-blue.svg)](https://www.typescriptlang.org/)
 [![Test](https://img.shields.io/badge/Test-Vitest-orange.svg)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
