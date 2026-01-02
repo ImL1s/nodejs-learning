@@ -1,15 +1,31 @@
 # 🚀 Node.js 現代化學習專案
 
-> 從零基礎到進階 - 使用 TypeScript 的完整 Node.js 學習路線
+<div align="center">
 
-## ✨ 專案特色
+**使用 TypeScript 打造高效能、可維護的 Node.js 應用程式**
 
-- ✅ **TypeScript** - 類型安全，現代化開發體驗
-- ✅ **ES Modules** - 使用最新的模組系統
-- ✅ **Express & Fastify** - 學習主流 Web 框架
-- ✅ **實戰導向** - 每個章節都有完整範例和練習
-- ✅ **最佳實踐** - 遵循業界標準和設計模式
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-v5.3+-blue.svg)](https://www.typescriptlang.org/)
+[![Test](https://img.shields.io/badge/Test-Vitest-orange.svg)](https://vitest.dev/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
+
+---
+
 - ✅ **完整測試** - 包含測試示範和 TDD 實踐
+
+## 🏗️ 系統架構 | System Architecture
+本專案的現代化開發流程：
+
+```mermaid
+graph LR
+    A[TypeScript Source] -->|tsx watch| B(Development Server)
+    A -->|tsc| C(Build /dist)
+    C -->|node| D(Production Runtime)
+    A -->|Vitest| E(Test Runner)
+    A -->|ESLint/Prettier| F(Code Quality)
+```
 
 ## 📚 學習路線
 
